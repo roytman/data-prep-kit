@@ -31,8 +31,8 @@ logger = get_logger(__name__)
 
 _headers = {"Content-Type": "application/json", "accept": "application/json"}
 
-CONNECT_TIMEOUT = 50
-READ_TIMEOUT = 50
+CONNECT_TIMEOUT = 120
+READ_TIMEOUT = 120
 TIMEOUT = (CONNECT_TIMEOUT, READ_TIMEOUT)
 
 
@@ -257,20 +257,20 @@ class KubeRayAPIs:
         message = None
         # Execute HTTP request
         url = self.server_url + self.api_base + f"namespaces/{ns}/clusters"
-        for i in range(self.http_retries):
-            try:
-                response = requests.get(url, headers=_headers, timeout=TIMEOUT)
-                if response.status_code // 100 == 2:
-                    return response.status_code, None, clusters_decoder(response.json())
-                else:
-                    logger.warning(f"Failed to list clusters in namespace {ns}, status : {response.status_code}")
-                    status = response.status_code
-                    message = response.json()["message"]
-            except Exception as e:
-                logger.warning(f"Failed to list clusters in namespace {ns}, exception : {e}")
-                status = 500
-                message = str(e)
-            time.sleep(1)
+        #for i in range(self.http_retries):
+        try:
+            response = requests.get(url, headers=_headers, timeout=TIMEOUT)
+            if response.status_code // 100 == 2:
+                return response.status_code, None, clusters_decoder(response.json())
+            else:
+                logger.warning(f"Failed to list clusters in namespace {ns}, status : {response.status_code}")
+                status = response.status_code
+                message = response.json()["message"]
+        except Exception as e:
+            logger.warning(f"Failed to list clusters in namespace {ns}, exception : {e}")
+            status = 500
+            message = str(e)
+        #    time.sleep(1)
         return status, message, None
 
     def get_cluster(self, ns: str, name: str) -> tuple[int, str, Cluster]:
@@ -451,7 +451,7 @@ class KubeRayAPIs:
                 else:
                     logger.warning(
                         f"Failed to submit job to the cluster {name} in namespace {ns}, "
-                        f"status : {response.status_code}"
+                        f"status : {response.status_code} reason : {response.reason} "
                     )
                     status = response.status_code
                     message = response.json()["message"]
