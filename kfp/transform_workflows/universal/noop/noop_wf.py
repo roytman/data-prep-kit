@@ -18,7 +18,8 @@ from kfp_support.workflow_support.utils import (
     ONE_WEEK_SEC,
     ComponentUtils,
 )
-
+import uuid
+RUN_ID = uuid.uuid4().hex
 
 task_image = "quay.io/dataprep1/data-prep-kit/noop:0.8.0"
 
@@ -26,13 +27,15 @@ task_image = "quay.io/dataprep1/data-prep-kit/noop:0.8.0"
 EXEC_SCRIPT_NAME: str = "noop_transform.py"
 
 # components
-base_kfp_image = "quay.io/dataprep1/data-prep-kit/kfp-data-processing:0.1.0"
+base_kfp_image = "quay.io/dataprep1/data-prep-kit/kfp-data-processing:0.1.0-v2"
 
 # compute execution parameters. Here different tranforms might need different implementations. As
 # a result, instead of creating a component we are creating it in place here.
-compute_exec_params_op = comp.func_to_container_op(
-    func=ComponentUtils.default_compute_execution_params, base_image=base_kfp_image
-)
+@dsl.component(base_image=base_kfp_image)
+def compute_exec_params_op(worker_options: str, actor_options: str) -> str:
+    return ComponentUtils.default_compute_execution_params(worker_options, actor_options)
+
+
 # create Ray cluster
 create_ray_op = comp.load_component_from_file("../../../kfp_ray_components/createRayComponent.yaml")
 # execute job
@@ -103,7 +106,7 @@ def noop(
     :return: None
     """
     # create clean_up task
-    clean_up_task = cleanup_ray_op(ray_name=ray_name, run_id=dsl.RUN_ID_PLACEHOLDER, server_url=server_url)
+    clean_up_task = cleanup_ray_op(ray_name=ray_name, run_id=RUN_ID, server_url=server_url)
     ComponentUtils.add_settings_to_component(clean_up_task, 60)
     # pipeline definition
     with dsl.ExitHandler(clean_up_task):
@@ -116,7 +119,7 @@ def noop(
         # start Ray cluster
         ray_cluster = create_ray_op(
             ray_name=ray_name,
-            run_id=dsl.RUN_ID_PLACEHOLDER,
+            run_id=RUN_ID,
             ray_head_options=ray_head_options,
             ray_worker_options=ray_worker_options,
             server_url=server_url,
@@ -127,7 +130,7 @@ def noop(
         # Execute job
         execute_job = execute_ray_jobs_op(
             ray_name=ray_name,
-            run_id=dsl.RUN_ID_PLACEHOLDER,
+            run_id=RUN_ID,
             additional_params=additional_params,
             # note that the parameters below are specific for NOOP transform
             exec_params={
@@ -137,7 +140,7 @@ def noop(
                 "runtime_num_workers": compute_exec_params.output,
                 "runtime_worker_options": runtime_actor_options,
                 "runtime_pipeline_id": runtime_pipeline_id,
-                "runtime_job_id": dsl.RUN_ID_PLACEHOLDER,
+                "runtime_job_id": RUN_ID,
                 "runtime_code_location": runtime_code_location,
                 "noop_sleep_sec": noop_sleep_sec,
             },
@@ -149,7 +152,7 @@ def noop(
         execute_job.after(ray_cluster)
 
     # Configure the pipeline level to one week (in seconds)
-    dsl.get_pipeline_conf().set_timeout(ONE_WEEK_SEC)
+#    dsl.get_pipeline_conf().set_timeout(ONE_WEEK_SEC)
 
 
 if __name__ == "__main__":
