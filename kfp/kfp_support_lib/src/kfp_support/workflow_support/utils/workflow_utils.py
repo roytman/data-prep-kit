@@ -620,9 +620,8 @@ class ComponentUtils:
     @staticmethod
     def set_s3_env_vars_to_component(
         task: dsl.PipelineTask,
-        secret: str,
-#        env2key: Dict[str, str] = {"s3-key": "S3_KEY",  "s3-secret": "S3_SECRET", "s3-endpoint": "ENDPOINT"},
-        secret_key_to_env: Dict[str, str] = {'password': 'SECRET_VAR'},
+        secret: str = '',
+        env2key: Dict[str, str] = {'s3-key': 'S3_KEY',  's3-secret': 'S3_SECRET', 's3-endpoint': 'ENDPOINT'},
         prefix: str = None,
     ) -> None:
         """
@@ -636,7 +635,7 @@ class ComponentUtils:
         if prefix is not None:
             for env_name, _ in env2key.items():    
                 env2key[prefix + "_" + env_name] = env2key.pop(env_name)    
-        kubernetes.use_secret_as_env(task=task,secret_name='boo', secret_key_to_env={'password': 'SECRET_VAR'})
+        kubernetes.use_secret_as_env(task=task,secret_name='s3-secret', secret_key_to_env=env2key)
 
     @staticmethod
     def default_compute_execution_params(

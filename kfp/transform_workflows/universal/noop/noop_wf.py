@@ -19,6 +19,8 @@ from kfp_support.workflow_support.utils import (
     ComponentUtils,
 )
 import uuid
+
+# FIXME: create a component to get run id
 RUN_ID = uuid.uuid4().hex
 
 task_image = "quay.io/dataprep1/data-prep-kit/noop:0.8.0"
@@ -134,15 +136,15 @@ def noop(
             additional_params=additional_params,
             # note that the parameters below are specific for NOOP transform
             exec_params={
-                "data_s3_config": data_s3_config,
-                "data_max_files": data_max_files,
-                "data_num_samples": data_num_samples,
-                "runtime_num_workers": compute_exec_params.output,
-                "runtime_worker_options": runtime_actor_options,
-                "runtime_pipeline_id": runtime_pipeline_id,
+                "data_s3_config": "{'input_folder': 'test/noop/input/', 'output_folder': 'test/noop/output/'}",
+                "data_max_files": -1,
+                "data_num_samples": -1,
+                "runtime_num_workers": "1",
+                "runtime_worker_options": "{'num_cpus': 0.8}",
+                "runtime_pipeline_id": "pipeline_id",
                 "runtime_job_id": RUN_ID,
-                "runtime_code_location": runtime_code_location,
-                "noop_sleep_sec": noop_sleep_sec,
+                "runtime_code_location": "{'github': 'github', 'commit_hash': '12345', 'path': 'path'}",
+                "noop_sleep_sec": 10,
             },
             exec_script_name=EXEC_SCRIPT_NAME,
             server_url=server_url,
