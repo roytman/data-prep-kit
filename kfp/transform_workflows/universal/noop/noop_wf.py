@@ -29,12 +29,14 @@ task_image = "quay.io/dataprep1/data-prep-kit/noop:0.8.0"
 EXEC_SCRIPT_NAME: str = "noop_transform.py"
 
 # components
-base_kfp_image = "quay.io/dataprep1/data-prep-kit/kfp-data-processing:0.1.0-v2"
+base_kfp_image = "quay.io/dataprep1/data-prep-kit/kfp-data-processing:0.1.0-kfp-v21"
 
 # compute execution parameters. Here different tranforms might need different implementations. As
 # a result, instead of creating a component we are creating it in place here.
 @dsl.component(base_image=base_kfp_image)
 def compute_exec_params_op(worker_options: str, actor_options: str) -> str:
+    from kfp_support.workflow_support.utils import ComponentUtils
+
     return ComponentUtils.default_compute_execution_params(worker_options, actor_options)
 
 
@@ -109,15 +111,15 @@ def noop(
     """
     # create clean_up task
     clean_up_task = cleanup_ray_op(ray_name=ray_name, run_id=RUN_ID, server_url=server_url)
-    ComponentUtils.add_settings_to_component(clean_up_task, 60)
+    ComponentUtils.add_settings_to_component(clean_up_task, 60, image_pull_policy="Always")
     # pipeline definition
     with dsl.ExitHandler(clean_up_task):
         # compute execution params
-        compute_exec_params = compute_exec_params_op(
-            worker_options=ray_worker_options,
-            actor_options=runtime_actor_options,
-        )
-        ComponentUtils.add_settings_to_component(compute_exec_params, ONE_HOUR_SEC * 2)
+#        compute_exec_params = compute_exec_params_op(
+ #           worker_options=ray_worker_options,
+  #          actor_options=runtime_actor_options,
+   #     )
+    #    ComponentUtils.add_settings_to_component(compute_exec_params, ONE_HOUR_SEC * 2,image_pull_policy="Always")
         # start Ray cluster
         ray_cluster = create_ray_op(
             ray_name=ray_name,
@@ -127,8 +129,8 @@ def noop(
             server_url=server_url,
             additional_params=additional_params,
         )
-        ComponentUtils.add_settings_to_component(ray_cluster, ONE_HOUR_SEC * 2)
-        ray_cluster.after(compute_exec_params)
+        ComponentUtils.add_settings_to_component(ray_cluster, ONE_HOUR_SEC * 2, image_pull_policy="Always")
+        #ray_cluster.after(compute_exec_params)
         # Execute job
         execute_job = execute_ray_jobs_op(
             ray_name=ray_name,
@@ -136,7 +138,7 @@ def noop(
             additional_params=additional_params,
             # note that the parameters below are specific for NOOP transform
             exec_params={
-                "data_s3_config": "{'input_folder': 'test/noop/input/', 'output_folder': 'test/noop/output/'}",
+                "data_s3_config": "{'input_folder': 'dev-code-datasets/data-prep-labs/kfp-v2/noop/input/', 'output_folder': 'dev-code-datasets/data-prep-labs/kfp-v2/noop/output/'}",
                 "data_max_files": -1,
                 "data_num_samples": -1,
                 "runtime_num_workers": "1",
@@ -149,7 +151,7 @@ def noop(
             exec_script_name=EXEC_SCRIPT_NAME,
             server_url=server_url,
         )
-        ComponentUtils.add_settings_to_component(execute_job, ONE_WEEK_SEC)
+        ComponentUtils.add_settings_to_component(execute_job, ONE_WEEK_SEC,image_pull_policy="Always")
         ComponentUtils.set_s3_env_vars_to_component(execute_job, data_s3_access_secret)
         execute_job.after(ray_cluster)
 
