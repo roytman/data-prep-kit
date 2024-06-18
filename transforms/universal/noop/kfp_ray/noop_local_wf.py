@@ -11,20 +11,24 @@
 ################################################################################
 import os
 
-import kfp.compiler as compiler
-import kfp.components as comp
-import kfp.dsl as dsl
 from workflow_support.compile_utils import ONE_HOUR_SEC, ONE_WEEK_SEC, ComponentUtils
 
+from kfp import local
+from kfp import kubernetes
+
+# import kfp.compiler as compiler
+import kfp.components as comp
+import kfp.dsl as dsl
+
+local.init(runner=local.DockerRunner())
+
+task_image = "quay.io/dataprep1/data-prep-kit/noop-ray:0.9.0.dev7"
 
 # the name of the job script
-EXEC_SCRIPT_NAME: str = "code_quality_transform_ray.py"
-PREFIX: str = ""
-
-task_image = "quay.io/dataprep1/data-prep-kit/code_quality-ray:0.4.0.dev7"
+EXEC_SCRIPT_NAME: str = "noop_transform_ray.py"
 
 # components
-base_kfp_image = "quay.io/dataprep1/data-prep-kit/kfp-data-processing:0.2.0.dev7"
+base_kfp_image = "quay.io/dataprep1/data-prep-kit/kfp-data-processing_v2:0.2.0.devMac"
 
 # path to kfp component specifications files
 component_spec_path = "../../../../kfp/kfp_ray_components/"
@@ -40,26 +44,20 @@ def compute_exec_params_func(
     runtime_pipeline_id: str,
     runtime_job_id: str,
     runtime_code_location: str,
-    cq_contents_column_name: str,
-    cq_language_column_name: str,
-    cq_tokenizer: str,
-    cq_hf_token: str,
+    noop_sleep_sec: int,
 ) -> dict:
     from runtime_utils import KFPUtils
 
     return {
         "data_s3_config": data_s3_config,
-        "data_max_files": data_max_files,
-        "data_num_samples": data_num_samples,
+        "data_max_files": str(data_max_files),
+        "data_num_samples": str(data_num_samples),
         "runtime_num_workers": KFPUtils.default_compute_execution_params(worker_options, actor_options),
         "runtime_worker_options": actor_options,
         "runtime_pipeline_id": runtime_pipeline_id,
         "runtime_job_id": runtime_job_id,
         "runtime_code_location": runtime_code_location,
-        "cq_contents_column_name": cq_contents_column_name,
-        "cq_language_column_name": cq_language_column_name,
-        "cq_tokenizer": cq_tokenizer,
-        "cq_hf_token": cq_hf_token,
+        "noop_sleep_sec": str(noop_sleep_sec),
     }
 
 
@@ -77,14 +75,12 @@ if os.getenv("KFPv2", "0") == "1":
     compute_exec_params_op = dsl.component_decorator.component(
         func=compute_exec_params_func, base_image=base_kfp_image
     )
-    print(
-        "WARNING: the ray cluster name can be non-unique at runtime, please do not execute simultaneous Runs of the " +
-        "same version of the same pipeline !!!")
+    print("WARNING: the ray cluster name can be non-unique at runtime, please do not execute simultaneous Runs of the " +
+          "same version of the same pipeline !!!")
     run_id = uuid.uuid4().hex
 else:
     compute_exec_params_op = comp.create_component_from_func(func=compute_exec_params_func, base_image=base_kfp_image)
     run_id = dsl.RUN_ID_PLACEHOLDER
-
 
 # create Ray cluster
 create_ray_op = comp.load_component_from_file(component_spec_path + "createRayClusterComponent.yaml")
@@ -94,45 +90,36 @@ execute_ray_jobs_op = comp.load_component_from_file(component_spec_path + "execu
 cleanup_ray_op = comp.load_component_from_file(component_spec_path + "deleteRayClusterComponent.yaml")
 
 # Task name is part of the pipeline name, the ray cluster name and the job name in DMF.
-TASK_NAME: str = "code_quality"
+TASK_NAME: str = "noop"
 
 
-# Pipeline to invoke execution on remote resource
 @dsl.pipeline(
     name=TASK_NAME + "-ray-pipeline",
-    description="Pipeline for code quality task",
+    description="Pipeline for noop",
 )
-def code_quality(
+def noop(
     # Ray cluster
-    ray_name: str = "code_quality-kfp-ray",  # name of Ray cluster
-    ray_head_options: str = '{"cpu": 1, "memory": 4, "image_pull_secret": "",\
-            "image": "'
-    + task_image
-    + '" }',
-    ray_worker_options: str = '{"replicas": 2, "max_replicas": 2, "min_replicas": 2, "cpu": 2, "memory": 4, "image_pull_secret": "",\
-            "image": "'
-    + task_image
-    + '" }',
-    server_url: str = "http://kuberay-apiserver-service.kuberay.svc.cluster.local:8888",
+    ray_name: str = "noop-kfp-ray",  # name of Ray cluster
+    ray_head_options: str = '{"cpu": 1, "memory": 4, "image_pull_secret": "", "image": "' + task_image + '" }',
+    ray_worker_options: str = '{"replicas": 2, "max_replicas": 2, "min_replicas": 2, "cpu": 2, "memory": 4, '
+    '"image_pull_secret": "", "image": "' + task_image + '"}',
+    server_url: str = "http://10.100.102.173:8080/ray/", # "http://kuberay-apiserver-service.kuberay.svc.cluster.local:8888",
     # data access
-    data_s3_config: str = "{'input_folder': 'test/code_quality/input/', 'output_folder': 'test/code_quality/output/'}",
+    data_s3_config: str = "{'input_folder': 'test/noop/input/', 'output_folder': 'test/noop/output/'}",
     data_s3_access_secret: str = "s3-secret",
     data_max_files: int = -1,
     data_num_samples: int = -1,
     # orchestrator
     runtime_actor_options: str = "{'num_cpus': 0.8}",
-    runtime_pipeline_id: str = "runtime_pipeline_id",
+    runtime_pipeline_id: str = "pipeline_id",
     runtime_code_location: str = "{'github': 'github', 'commit_hash': '12345', 'path': 'path'}",
-    # code quality parameters
-    cq_contents_column_name: str = "contents",
-    cq_language_column_name: str = "language",
-    cq_tokenizer: str = "codeparrot/codeparrot",
-    cq_hf_token: str = "None",
+    # noop parameters
+    noop_sleep_sec: int = 10,
     # additional parameters
     additional_params: str = '{"wait_interval": 2, "wait_cluster_ready_tmout": 400, "wait_cluster_up_tmout": 300, "wait_job_ready_tmout": 400, "wait_print_tmout": 30, "http_retries": 5}',
 ):
     """
-    Pipeline to execute Code Quality transform
+    Pipeline to execute NOOP transform
     :param ray_name: name of the Ray cluster
     :param ray_head_options: head node options, containing the following:
         cpu - number of cpus
@@ -161,65 +148,59 @@ def code_quality(
     :param data_num_samples - num samples to process
     :param runtime_actor_options - actor options
     :param runtime_pipeline_id - pipeline id
-    :param cq_contents_column_name - Name of the column holds the data to process
-    :param cq_language_column_name - Name of the column holds the programming language details
-    :param cq_tokenizer - Name or path to the tokenizer
-    :param cq_hf_token - Huggingface auth token to download and use the tokenizer
+    :param runtime_code_location - code location
+    :param noop_sleep_sec - noop sleep time
     :return: None
     """
     # create clean_up task
-    clean_up_task = cleanup_ray_op(ray_name=ray_name, run_id=run_id, server_url=server_url)
-    ComponentUtils.add_settings_to_component(clean_up_task, 60)
+  #  clean_up_task = cleanup_ray_op(ray_name=ray_name, run_id=run_id, server_url=server_url)
+  #  ComponentUtils.add_settings_to_component(clean_up_task, 60)
     # pipeline definition
-    with dsl.ExitHandler(clean_up_task):
-        # compute execution params
-        compute_exec_params = compute_exec_params_op(
-            worker_options=ray_worker_options,
-            actor_options=runtime_actor_options,
-            data_s3_config=data_s3_config,
-            data_max_files=data_max_files,
-            data_num_samples=data_num_samples,
-            runtime_pipeline_id=runtime_pipeline_id,
-            runtime_job_id=run_id,
-            runtime_code_location=runtime_code_location,
-            cq_contents_column_name=cq_contents_column_name,
-            cq_language_column_name=cq_language_column_name,
-            cq_tokenizer=cq_tokenizer,
-            cq_hf_token=cq_hf_token,
-        )
+   # with dsl.ExitHandler(clean_up_task):
+    # compute execution params
+    compute_exec_params = compute_exec_params_op(
+        worker_options=ray_worker_options,
+        actor_options=runtime_actor_options,
+        data_s3_config=data_s3_config,
+        data_max_files=data_max_files,
+        data_num_samples=data_num_samples,
+        runtime_pipeline_id=runtime_pipeline_id,
+        runtime_job_id=run_id,
+        runtime_code_location=runtime_code_location,
+        noop_sleep_sec=noop_sleep_sec,
+    )
+    ComponentUtils.add_settings_to_component(compute_exec_params, ONE_HOUR_SEC * 2)
+    # start Ray cluster
+    ray_cluster = create_ray_op(
+        ray_name=ray_name,
+        run_id=run_id,
+        ray_head_options=ray_head_options,
+        ray_worker_options=ray_worker_options,
+        server_url=server_url,
+        additional_params=additional_params,
+    )
+    ComponentUtils.add_settings_to_component(ray_cluster, ONE_HOUR_SEC * 2)
+    ray_cluster.after(compute_exec_params)
+    # Execute job
+    execute_job = execute_ray_jobs_op(
+        ray_name=ray_name,
+        run_id=run_id,
+        additional_params=additional_params,
+        # note that the parameters below are specific for NOOP transform
+        exec_params=compute_exec_params.output,
+        exec_script_name=EXEC_SCRIPT_NAME,
+        server_url=server_url,
+    )
+    ComponentUtils.add_settings_to_component(execute_job, ONE_WEEK_SEC)
+    # ComponentUtils.set_s3_env_vars_to_component(execute_job, data_s3_access_secret)
+    # execute_job.set_env_variable("S3_KEY", "minio")
+    # execute_job.set_env_variable("S3_SECRET", "minio123")
+    # execute_job.set_env_variable("ENDPOINT", "http://10.100.102.173:8090")
 
-        ComponentUtils.add_settings_to_component(compute_exec_params, ONE_HOUR_SEC * 2)
-        # start Ray cluster
-        ray_cluster = create_ray_op(
-            ray_name=ray_name,
-            run_id=run_id,
-            ray_head_options=ray_head_options,
-            ray_worker_options=ray_worker_options,
-            server_url=server_url,
-            additional_params=additional_params,
-        )
-        ComponentUtils.add_settings_to_component(ray_cluster, ONE_HOUR_SEC * 2)
-        ray_cluster.after(compute_exec_params)
+    execute_job.after(ray_cluster)
 
-        # Execute job
-        execute_job = execute_ray_jobs_op(
-            ray_name=ray_name,
-            run_id=run_id,
-            additional_params=additional_params,
-            # note that the parameters below are specific for NOOP transform
-            exec_params=compute_exec_params.output,
-            exec_script_name=EXEC_SCRIPT_NAME,
-            server_url=server_url,
-        )
-        ComponentUtils.add_settings_to_component(execute_job, ONE_WEEK_SEC)
-        ComponentUtils.set_s3_env_vars_to_component(execute_job, data_s3_access_secret)
-
-        execute_job.after(ray_cluster)
-
+    # TODO
     # Configure the pipeline level to one week (in seconds)
-    dsl.get_pipeline_conf().set_timeout(ONE_WEEK_SEC)
+    # dsl.get_pipeline_conf().set_timeout(ONE_WEEK_SEC)
 
-
-if __name__ == "__main__":
-    # Compiling the pipeline
-    compiler.Compiler().compile(code_quality, __file__.replace(".py", ".yaml"))
+task = noop()

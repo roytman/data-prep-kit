@@ -38,12 +38,14 @@ class KFPUtils:
         :param endpoint: environment variable for S3 endpoint
         :return:
         """
+        print(f"env variables:\n {os.environ}\n")
         s3_key = os.getenv(access_key, None)
         s3_secret = os.getenv(secret_key, None)
         s3_endpoint = os.getenv(endpoint, None)
         if s3_key is None or s3_secret is None or s3_endpoint is None:
             logger.warning("Failed to load s3 credentials")
-        return s3_key, s3_secret, s3_endpoint
+        #return s3_key, s3_secret, s3_endpoint
+        return "minioadmin", "minioadmin", "http://10.100.102.173:9000"
 
     @staticmethod
     def get_namespace() -> str:
@@ -58,6 +60,8 @@ class KFPUtils:
             logger.warning(
                 f"Failed to open /var/run/secrets/kubernetes.io/serviceaccount/namespace file, " f"exception {e}"
             )
+            # FIXME, local test
+            return "kubeflow"
         else:
             with file:
                 ns = file.read()
