@@ -58,7 +58,7 @@ class KFPUtils:
             file = open("/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r")
         except Exception as e:
             logger.warning(
-                f"Failed to open /var/run/secrets/kubernetes.io/serviceaccount/namespace file, " f"exception {e}"
+                f"Failed to open /var/run/secrets/kubernetes.io/serviceaccount/namespace file, " f"exception {e} , return 'kibeflow'"
             )
             # FIXME, local test
             return "kubeflow"
