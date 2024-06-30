@@ -1,3 +1,4 @@
+import subprocess
 from typing import Any, List
 import importlib
 from data_processing.runtime.pure_python import PythonTransformLauncher
@@ -116,14 +117,14 @@ if __name__ == "__main__":
         # noop params
         "noop_sleep_sec": 1,
     }
-
-    noop_step = PipelineStep(name="noop", path_2_project_definition="transforms/universal/noop/python",
-                            package_name="dpk_noop_transform_python", module_name="noop_transform_python",
-                            transformer_config_class_name='NOOPPythonTransformConfiguration', params=params)
-
-    updater = LocalRepositoryEnvUpdater("../../../")
-
-    pipeline = Pipeline(shared_updater=updater, steps=[noop_step])
+    subprocess.check_call[sys.executable, "setup_execution.py", ParamsUtils.dict_to_req(d=params)],
+    # noop_step = PipelineStep(name="noop", path_2_project_definition="transforms/universal/noop/python",
+    #                         package_name="dpk_noop_transform_python", module_name="noop_transform_python",
+    #                         transformer_config_class_name='NOOPPythonTransformConfiguration', params=params)
+    #
+    # updater = LocalRepositoryEnvUpdater("../../../")
+    #
+    # pipeline = Pipeline(shared_updater=updater, steps=[noop_step])
 
     # # Set the simulated command line args
     # print(f"sys_argv 1 = {sys.argv}")

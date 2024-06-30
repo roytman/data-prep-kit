@@ -43,8 +43,6 @@ class GitHubEnvUpdater(AbstractEnvUpdater):
         try:
             command = [sys.executable, "-m", "pip", "install", "--exists-action", "i", self.gitrepo + "#subdirectory=" + subdir]
             result = subprocess.check_call(command)
-            [sys.executable, "-m", "pip", "install", "--importlib.invalidate_caches()", "i", self.gitrepo + "#subdirectory=" + subdir]
-
             print(f"package  is installed")
         except Exception  as e:
             print(f"Command '{command}' returned non-zero exit status {e.returncode}")
