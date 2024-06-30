@@ -13,8 +13,8 @@ def doc_id():
     from doc_id_transform_ray import DocIDRayTransformConfiguration
 
     # create parameters
-    input_folder = os.path.abspath(os.path.join(os.path.dirname(__file__),  "/home/dpk", "test-data/input"))
-    output_folder = os.path.abspath(os.path.join(os.path.dirname(__file__),  "/home/dpk", "output"))
+    input_folder = os.path.abspath(os.path.join(os.path.dirname(__file__),  "/home/ray", "test-data/input"))
+    output_folder = os.path.abspath(os.path.join(os.path.dirname(__file__),  "/home/ray", "output"))
     local_conf = {
         "input_folder": input_folder,
         "output_folder": output_folder,
@@ -57,8 +57,8 @@ def ededup():
     # create launcher
     launcher = RayTransformLauncher(EdedupRayTransformConfiguration())
     # create parameters
-    input_folder = os.path.abspath(os.path.join(os.path.dirname(__file__),  "/home/dpk", "test-data/input"))
-    output_folder = os.path.abspath(os.path.join(os.path.dirname(__file__),  "/home/dpk", "output"))
+    input_folder = os.path.abspath(os.path.join(os.path.dirname(__file__),  "/home/ray", "test-data/input"))
+    output_folder = os.path.abspath(os.path.join(os.path.dirname(__file__),  "/home/ray", "output"))
     local_conf = {
         "input_folder": input_folder,
         "output_folder": output_folder,
@@ -99,8 +99,8 @@ def fdedup():
     # create launcher
     launcher = RayTransformLauncher(FdedupRayTransformConfiguration())
     # create parameters
-    input_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), "/home/dpk", "test-data/input"))
-    output_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), "/home/dpk", "output"))
+    input_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), "/home/ray", "test-data/input"))
+    output_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), "/home/ray", "output"))
     local_conf = {
         "input_folder": input_folder,
         "output_folder": output_folder,
