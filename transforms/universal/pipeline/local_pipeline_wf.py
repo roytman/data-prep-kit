@@ -16,25 +16,9 @@ local.init(runner=local.DockerRunner())
 
 @dsl.component(base_image="quay.io/dataprep1/data-prep-kit/noop-python:0.2.0")
 def noop():
-    import os
-
-    from data_processing.data_access import DataAccessLocal
-    from noop_transform import NOOPTransform
-
-    # create parameters
-    input_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), "/home/dpk", "test-data", "input"))
-
-    noop_params = {"sleep_sec": 1}
-
-    transform = NOOPTransform(noop_params)
-    # Use the local data access to read a parquet table.
-    data_access = DataAccessLocal()
-    table = data_access.get_table(os.path.join(input_folder, "test1.parquet"))
-    print(f"input table: {table}")
-    # Transform the table
-    table_list, metadata = transform.transform(table)
-    print(f"\noutput table: {table_list}")
-    print(f"output metadata : {metadata}")
+    import subprocess
+    import sys
+    subprocess.run([sys.executable, "noop_transform_python.py"], check=True)
 
 @dsl.component(base_image="quay.io/dataprep1/data-prep-kit/lang_id-ray:0.2.0")
 def langID():
@@ -99,7 +83,6 @@ def tokenization():
     # Launch the ray actor(s) to process the input
     launcher.launch()
 
-# or run it in a pipeline
 @dsl.pipeline
 def test_pipeline():
     noop()
