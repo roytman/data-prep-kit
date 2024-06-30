@@ -15,7 +15,7 @@ def doc_id(output_folder: Output[Artifact]):
 
     # create parameters
     input_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), "../test-data/input"))
-    output_folder =data_output.path
+    output_folder =output_folder.path
     local_conf = {
         "input_folder": input_folder,
         "output_folder": output_folder,
@@ -152,8 +152,8 @@ def fdedup(input_folder: Input[Artifact], output_folder: Output[Artifact]):
 @dsl.pipeline
 def test_pipeline():
     doc_id_task = doc_id()
-    ededup_task = ededup(input_folder=doc_id_task.outputs["output_folder"].path)
-    fdedup_task = fdedup(input_folder=ededup_task.outputs["output_folder"].path)
-    print(f"The output data is at {fdedup_task.outputs['output_folder'].path}")
+    ededup_task = ededup(input_folder=doc_id_task.outputs["output_folder"])
+    fdedup_task = fdedup(input_folder=ededup_task.outputs["output_folder"])
+    print(f"The output data is at {fdedup_task.outputs['output_folder']}")
 
 pipeline_task = test_pipeline()
