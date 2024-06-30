@@ -151,9 +151,9 @@ def fdedup(input_folder: Input[Artifact], output_folder: Output[Artifact]):
 
 @dsl.pipeline
 def test_pipeline():
-    doc_id()
-    ededup(doc_id.outputs["output_folder"].path)
-    fdedup(ededup.outputs["output_folder"].path)
-    print(f"The output data is at {fdedup.outputs['output_folder'].path}")
+    doc_id_task = doc_id()
+    ededup_task = ededup(doc_id_task.outputs["output_folder"].path)
+    fdedup_task = fdedup(ededup_task.outputs["output_folder"].path)
+    print(f"The output data is at {fdedup_task.outputs['output_folder'].path}")
 
 pipeline_task = test_pipeline()
