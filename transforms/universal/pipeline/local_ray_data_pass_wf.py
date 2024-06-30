@@ -14,7 +14,7 @@ def doc_id(output_folder: Output[Artifact]):
     from doc_id_transform_ray import DocIDRayTransformConfiguration
 
     # create parameters
-    input_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), "../test-data/input"))
+    input_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), "test-data/input"))
     output_folder =output_folder.path
     local_conf = {
         "input_folder": input_folder,
