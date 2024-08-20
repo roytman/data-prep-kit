@@ -2,6 +2,17 @@ name: Build, Test and (Optionally) Push images
 
 on:
     workflow_dispatch:
+      inputs:
+        kfp_v1_test_wf:
+          description: "A workflow that will be tested for KFPv1, e.g. 'transforms/universal/noop'"
+          required: false
+          default: ''
+          type: string
+        kfp_v2_test_wf:
+          description: "A workflow that will be tested for KFPv2, e.g. 'transforms/universal/noop'"
+          required: false
+          default: ''
+          type: string
     push:
         branches:
             - "dev"
@@ -160,13 +171,19 @@ jobs:
                   make -C $K8S_SETUP_SCRIPTS setup
                   make -C kfp/kfp_support_lib test
                   make -C transforms workflow-build
-                  dir=("code"  "universal") && index=$(($RANDOM % 2)) && subdirs=${dir[$index]} && transforms=($(find transforms/$subdirs/ -type d  -maxdepth 1 ))
-                  # First element is not really a subdir but rather the current dir so remove it and randomly choose a transform to run
-                  set -- "${transforms[@]}" && shift && transforms=("$@") && size=${#transforms[@]} && index=$(($RANDOM % $size))
-                  source $K8S_SETUP_SCRIPTS/common.sh
-                  header_text "Running ${transforms[$index]} workflow test"
-                  make -C ${transforms[$index]} workflow-test
-                  header_text "Run ${transforms[$index]} completed"
+                  if [-n ${{ inputs.kfp_v1_test_wf }}];
+                  then
+                    workflow=${{ inputs.kfp_v1_test_wf }}
+                  else
+                    dir=("code"  "universal" "language") && index=$(($RANDOM % 3)) && subdirs=${dir[$index]} && transforms=($(find transforms/$subdirs/ -type d  -maxdepth 1 ))
+                    # First element is not really a subdir but rather the current dir so remove it and randomly choose a transform to run
+                    set -- "${transforms[@]}" && shift && transforms=("$@") && size=${#transforms[@]} && index=$(($RANDOM % $size))
+                    source $K8S_SETUP_SCRIPTS/common.sh
+                    workflow=${transforms[$index]}
+                  fi
+                  header_text "Running ${workflow} workflow test"
+                  make -C ${workflow} workflow-test
+                  header_text "Run ${workflow} completed"
 
     test-kfp-v2:
         runs-on: ubuntu-22.04
@@ -204,13 +221,19 @@ jobs:
                   make -C $K8S_SETUP_SCRIPTS setup
                   make -C kfp/kfp_support_lib test
                   make -C transforms workflow-build
-                  dir=("code"  "universal") && index=$(($RANDOM % 2)) && subdirs=${dir[$index]} && transforms=($(find transforms/$subdirs/ -type d  -maxdepth 1 ))
-                  # First element is not really a subdir but rather the current dir so remove it and randomly choose a transform to run
-                  set -- "${transforms[@]}" && shift && transforms=("$@") && size=${#transforms[@]} && index=$(($RANDOM % $size))
-                  source $K8S_SETUP_SCRIPTS/common.sh
-                  header_text "Running ${transforms[$index]} workflow test"
-                  make -C ${transforms[$index]} workflow-test
-                  header_text "Run ${transforms[$index]} completed"
+                  if [-n ${{ inputs.kfp_v2_test_wf }}];
+                  then
+                    workflow=${{ inputs.kfp_v2_test_wf }}
+                  else
+                    dir=("code"  "universal" "language") && index=$(($RANDOM % 3)) && subdirs=${dir[$index]} && transforms=($(find transforms/$subdirs/ -type d  -maxdepth 1 ))
+                    # First element is not really a subdir but rather the current dir so remove it and randomly choose a transform to run
+                    set -- "${transforms[@]}" && shift && transforms=("$@") && size=${#transforms[@]} && index=$(($RANDOM % $size))
+                    source $K8S_SETUP_SCRIPTS/common.sh
+                    workflow=${transforms[$index]}
+                  fi
+                  header_text "Running ${workflow} workflow test"
+                  make -C ${workflow} workflow-test
+                  header_text "Run ${workflow} completed"
     test-data-processing-lib-images:
         needs: [check_if_push_images]
         if: needs.check_if_push_images.outputs.publish_images == 'true'
