@@ -79,27 +79,6 @@ def sample_ray_orchestrator(
     + '"}, "ray_head_options": {"image": "'
     + ededup_image
     + '"}}',
-    # Fuzzy dedup step parameters
-    p5_name: str = "fdedup",
-    p5_skip: bool = False,
-    p5_fdedup_contents_column: str = "contents",
-    p5_fdedup_document_id_column: str = "int_id_column",
-    p5_fdedup_num_permutations: int = 112,
-    p5_fdedup_num_bands: int = 14,
-    p5_fdedup_num_minhashes_per_band: int = 8,
-    p5_fdedup_word_shingle_size: int = 5,
-    p5_fdedup_shingle_option: str = "word",
-    p5_fdedup_jaccard_similarity_threshold: float = 0.75,
-    p5_fdedup_seed: int = 42,
-    p5_fdedup_operation_mode: str = "annotate",
-    # data sampling
-    p5_fdedup_n_samples: int = 10,
-    # overriding parameters
-    p5_overriding_params: str = '{"ray_worker_options": {"image": "'
-    + fdedup_image
-    + '"}, "ray_head_options": {"image": "'
-    + fdedup_image
-    + '"}}',
 ):
 
     # get all arguments
@@ -144,15 +123,6 @@ def sample_ray_orchestrator(
         input_folder=doc_id.output,
         prev_op=doc_id,
     )
-
-    # fuzzy deduplication
-    # fuzzy_dedup = _create_component(
-    #     pipeline_name=p1_orch_fuzzy_dedup_name,
-    #     displayed_name="fuzzy dedup",
-    #     prefix="p5_",
-    #     input_folder=exact_dedup.output,
-    #     prev_op=exact_dedup,
-    # )
 
     # Configure the pipeline level to one week (in seconds)
     dsl.get_pipeline_conf().set_timeout(ONE_WEEK_SEC)

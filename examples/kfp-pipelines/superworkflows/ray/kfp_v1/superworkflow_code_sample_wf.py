@@ -107,100 +107,80 @@ def sample_code_ray_orchestrator(
     + '"}, "ray_head_options": {"image": "'
     + ededup_image
     + '"}}',
-    # Fuzzy dedup step parameters
-    # p6_name: str = "fdedup",
-    # p6_skip: bool = False,
-    # p6_fdedup_contents_column: str = "contents",
-    # p6_fdedup_document_id_column: str = "int_id_column",
-    # p6_fdedup_num_permutations: int = 112,
-    # p6_fdedup_num_bands: int = 14,
-    # p6_fdedup_num_minhashes_per_band: int = 8,
-    # p6_fdedup_word_shingle_size: int = 5,
-    # p6_fdedup_shingle_option: str = "word",
-    # p6_fdedup_jaccard_similarity_threshold: float = 0.75,
-    # p6_fdedup_seed: int = 42,
-    # p6_fdedup_operation_mode: str = "annotate",
-    #     # data sampling
-    # p6_fdedup_n_samples: int = 10,
-    # # overriding parameters
-    # p6_overriding_params: str = '{"ray_worker_options": {"image": "'
-    # + fdedup_image
-    # + '"}, "ray_head_options": {"image": "'
-    # + fdedup_image
-    # + '"}}',
+
     # proglang_select step parameters
-    p7_name: str = "proglang_select",
-    p7_skip: bool = False,
-    p7_proglang_select_allowed_langs_file: str = "test/proglang_select/languages/allowed-code-languages.txt",
-    p7_proglang_select_language_column: str = "programming_language",
-    p7_proglang_select_s3_access_secret: str = "s3-secret",
+    p6_name: str = "proglang_select",
+    p6_skip: bool = False,
+    p6_proglang_select_allowed_langs_file: str = "test/proglang_select/languages/allowed-code-languages.txt",
+    p6_proglang_select_language_column: str = "programming_language",
+    p6_proglang_select_s3_access_secret: str = "s3-secret",
     # overriding parameters
-    p7_overriding_params: str = '{"ray_worker_options": {"image": "'
+    p6_overriding_params: str = '{"ray_worker_options": {"image": "'
     + proglang_select_image
     + '"}, "ray_head_options": {"image": "'
     + proglang_select_image
     + '"}}',
     # Code quality step parameters
-    p8_name: str = "code_quality",
-    p8_skip: bool = False,
-    p8_cq_contents_column_name: str = "contents",
-    p8_cq_language_column_name: str = "programming_language",
-    p8_cq_tokenizer: str = "codeparrot/codeparrot",
-    p8_cq_hf_token: str = "None",
+    p7_name: str = "code_quality",
+    p7_skip: bool = False,
+    p7_cq_contents_column_name: str = "contents",
+    p7_cq_language_column_name: str = "programming_language",
+    p7_cq_tokenizer: str = "codeparrot/codeparrot",
+    p7_cq_hf_token: str = "None",
     # orchestrator
     # overriding parameters
-    p8_overriding_params: str = '{"ray_worker_options": {"image": "'
+    p7_overriding_params: str = '{"ray_worker_options": {"image": "'
     + code_quality_image
     + '"}, "ray_head_options": {"image": "'
     + code_quality_image
     + '"}}',
     # malware step parameters
-    p9_name: str = "malware",
-    p9_skip: bool = False,
-    p9_malware_input_column: str = "contents",
-    p9_malware_output_column: str = "virus_detection",
+    p8_name: str = "malware",
+    p8_skip: bool = False,
+    p8_malware_input_column: str = "contents",
+    p8_malware_output_column: str = "virus_detection",
     # orchestrator
     # overriding parameters
-    p9_overriding_params: str = '{"ray_worker_options": {"image": "'
+    p8_overriding_params: str = '{"ray_worker_options": {"image": "'
     + malware_image
     + '"}, "ray_head_options": {"image": "'
     + malware_image
     + '"}}',
     # license check step parameters
-    p10_name: str = "license_select",
-    p10_skip: bool = False,
-    p10_lc_license_column_name: str = "license",
-    p10_lc_licenses_file: str = "test/license_select/sample_approved_licenses.json",
+    p9_name: str = "license_select",
+    p9_skip: bool = False,
+    p9_lc_license_column_name: str = "license",
+    p9_lc_licenses_file: str = "test/license_select/sample_approved_licenses.json",
     # orchestrator
     # overriding parameters
-    p10_overriding_params: str = '{"ray_worker_options": {"image": "'
+    p9_overriding_params: str = '{"ray_worker_options": {"image": "'
     + license_select_image
     + '"}, "ray_head_options": {"image": "'
     + license_select_image
     + '"}}',
     # header cleanser step parameters
-    p11_name: str = "header_cleanser",
-    p11_skip: bool = False,
-    p11_header_cleanser_contents_column_name: str = "contents",
-    p11_header_cleanser_license: bool = True,
-    p11_header_cleanser_copyright: bool = True,
+    p10_name: str = "header_cleanser",
+    p10_skip: bool = False,
+    p10_header_cleanser_contents_column_name: str = "contents",
+    p10_header_cleanser_license: bool = True,
+    p10_header_cleanser_copyright: bool = True,
     # orchestrator
     # overriding parameters
-    p11_overriding_params: str = '{"ray_worker_options": {"image": "'
+    p10_overriding_params: str = '{"ray_worker_options": {"image": "'
     + header_cleanser_image
     + '"}, "ray_head_options": {"image": "'
     + header_cleanser_image
     + '"}}',
     # tokenization parameters
-    p12_name: str = "tokenization",
-    p12_skip: bool = False,
-    p12_tkn_tokenizer: str = "hf-internal-testing/llama-tokenizer",
-    p12_tkn_doc_id_column: str = "document_id",
-    p12_tkn_doc_content_column: str = "contents",
-    p12_tkn_text_lang: str = "en",
-    p12_tkn_tokenizer_args: str = "cache_dir=/tmp/hf",
-    p12_tkn_chunk_size: int = 0,
-    p12_overriding_params: str = '{"ray_worker_options": {"image": "'
+    p11_name: str = "tokenization",
+    p11_skip: bool = False,
+    p11_tkn_tokenizer: str = "hf-internal-testing/llama-tokenizer",
+    p11_tkn_doc_id_column: str = "document_id",
+    p11_tkn_doc_content_column: str = "contents",
+    p11_tkn_text_lang: str = "en",
+    p11_tkn_tokenizer_args: str = "cache_dir=/tmp/hf",
+    p11_tkn_chunk_size: int = 0,
+    p11_overriding_params: str = '{"ray_worker_options": {"image": "'
     + tokenizer_image
     + '"}, "ray_head_options": {"image": "'
     + tokenizer_image
@@ -259,20 +239,11 @@ def sample_code_ray_orchestrator(
         prev_op=doc_id
     )
 
-    # fuzzy deduplication
-    # fuzzy_dedup = _create_component(
-    #     pipeline_name=p1_orch_fuzzy_dedup_name,
-    #     displayed_name="fuzzy dedup",
-    #     prefix="p6_",
-    #     input_folder=exact_dedup.output,
-    #     prev_op=exact_dedup,
-    # )
-
     # proglang_select
     proglang_select = _create_component(
         pipeline_name=p1_orch_proglang_select_name,
         displayed_name="proglang select",
-        prefix="p7_",
+        prefix="p6_",
         input_folder=exact_dedup.output,
         prev_op=exact_dedup,
     )
@@ -281,7 +252,7 @@ def sample_code_ray_orchestrator(
     code_quality = _create_component(
         pipeline_name=p1_orch_code_quality_name,
         displayed_name="code_quality",
-        prefix="p8_",
+        prefix="p7_",
         input_folder=proglang_select.output,
         prev_op=proglang_select,
     )
@@ -290,7 +261,7 @@ def sample_code_ray_orchestrator(
     malware = _create_component(
         pipeline_name=p1_orch_malware_name,
         displayed_name="code_quality",
-        prefix="p9_",
+        prefix="p8_",
         input_folder=code_quality.output,
         prev_op=code_quality,
     )
@@ -299,7 +270,7 @@ def sample_code_ray_orchestrator(
     license_select = _create_component(
         pipeline_name=p1_orch_license_select_name,
         displayed_name="license select",
-        prefix="p10_",
+        prefix="p9_",
         input_folder=malware.output,
         prev_op=malware,
     )
@@ -308,7 +279,7 @@ def sample_code_ray_orchestrator(
     header_cleanser = _create_component(
         pipeline_name=p1_orch_header_cleanser_name,
         displayed_name="header_cleanser",
-        prefix="p11_",
+        prefix="p10_",
         input_folder=license_select.output,
         prev_op=license_select,
     )
@@ -317,7 +288,7 @@ def sample_code_ray_orchestrator(
     tokenization = _create_component(
         pipeline_name=p1_orch_tokenization_wf_name,
         displayed_name="tokenization",
-        prefix="p12_",
+        prefix="p11_",
         input_folder=header_cleanser.output,
         prev_op=header_cleanser,
     )
