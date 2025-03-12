@@ -87,7 +87,7 @@ def sample_ray_orchestrator(
     def _create_component(
             pipeline_name: str,
             displayed_name: str,
-            prefix="p3_",
+            prefix="",
             input_folder="",
             prev_op: dsl.BaseOp = None,
     ):

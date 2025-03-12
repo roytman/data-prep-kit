@@ -11,10 +11,17 @@
 ################################################################################
 
 import os
+import json
 import kfp.compiler as compiler
 import kfp.components as comp
 import kfp.dsl as dsl
 from workflow_support.compile_utils import ONE_WEEK_SEC
+
+from python_apiserver_client.params import (
+        EnvironmentVariables,
+        EnvVarFrom,
+        EnvVarSource,
+)
 
 ORCH_HOST = "http://ml-pipeline:8888"
 
@@ -26,12 +33,19 @@ code_to_parquet_image = "quay.io/dataprep1/data-prep-kit/code2parquet-ray:latest
 proglang_select_image = "quay.io/dataprep1/data-prep-kit/proglang_select-ray:latest"
 code_quality_image = "quay.io/dataprep1/data-prep-kit/code_quality-ray:latest"
 malware_image = "quay.io/dataprep1/data-prep-kit/malware-ray:latest"
-license_select_image = "quay.io/dataprep1/data-prep-kit/license_select-ray:latest"
-header_cleanser_image = "quay.io/dataprep1/data-prep-kit/header-cleanser-ray:latest"
 doc_id_image = "quay.io/dataprep1/data-prep-kit/doc_id-ray:latest"
 ededup_image = "quay.io/dataprep1/data-prep-kit/ededup-ray:latest"
 fdedup_image = "quay.io/dataprep1/data-prep-kit/fdedup-ray:latest"
 tokenizer_image = "quay.io/dataprep1/data-prep-kit/tokenization-ray:latest"
+
+
+# The name of the secret that holds the HugginFace token
+HF_SECRET = "hf-secret"
+# The secret key that holds the HugginFace token
+HF_SECRET_KEY = "hf-token"
+
+env_v = EnvVarFrom(source=EnvVarSource.SECRET, name=HF_SECRET, key=HF_SECRET_KEY)
+envs = EnvironmentVariables(from_ref={"HF_READ_ACCESS_TOKEN": env_v})
 
 
 # Pipeline to invoke execution on remote resource
@@ -44,8 +58,6 @@ def sample_code_ray_orchestrator(
     p1_orch_code_to_parquet_name: str = "code2parquet_wf",
     p1_orch_code_quality_name: str = "code_quality_wf",
     p1_orch_malware_name: str = "malware_wf",
-    p1_orch_license_select_name: str = "license_select_wf",
-    p1_orch_header_cleanser_name: str = "header_cleanser_wf",
     p1_orch_proglang_select_name: str = "proglang_select_wf",
     p1_orch_doc_id_name: str = "doc_id_wf",
     p1_orch_exact_dedup_name: str = "ededup_wf",
@@ -126,13 +138,16 @@ def sample_code_ray_orchestrator(
     p7_cq_contents_column_name: str = "contents",
     p7_cq_language_column_name: str = "programming_language",
     p7_cq_tokenizer: str = "codeparrot/codeparrot",
-    p7_cq_hf_token: str = "None",
     # orchestrator
     # overriding parameters
     p7_overriding_params: str = '{"ray_worker_options": {"image": "'
     + code_quality_image
+    + '", "environment": "'
+    + json.dumps(envs.to_dict())
     + '"}, "ray_head_options": {"image": "'
     + code_quality_image
+    + '", "environment": "'
+    + json.dumps(envs.to_dict())
     + '"}}',
     # malware step parameters
     p8_name: str = "malware",
@@ -146,41 +161,16 @@ def sample_code_ray_orchestrator(
     + '"}, "ray_head_options": {"image": "'
     + malware_image
     + '"}}',
-    # license check step parameters
-    p9_name: str = "license_select",
-    p9_skip: bool = False,
-    p9_lc_license_column_name: str = "license",
-    p9_lc_licenses_file: str = "test/license_select/sample_approved_licenses.json",
-    # orchestrator
-    # overriding parameters
-    p9_overriding_params: str = '{"ray_worker_options": {"image": "'
-    + license_select_image
-    + '"}, "ray_head_options": {"image": "'
-    + license_select_image
-    + '"}}',
-    # header cleanser step parameters
-    p10_name: str = "header_cleanser",
-    p10_skip: bool = False,
-    p10_header_cleanser_contents_column_name: str = "contents",
-    p10_header_cleanser_license: bool = True,
-    p10_header_cleanser_copyright: bool = True,
-    # orchestrator
-    # overriding parameters
-    p10_overriding_params: str = '{"ray_worker_options": {"image": "'
-    + header_cleanser_image
-    + '"}, "ray_head_options": {"image": "'
-    + header_cleanser_image
-    + '"}}',
     # tokenization parameters
-    p11_name: str = "tokenization",
-    p11_skip: bool = False,
-    p11_tkn_tokenizer: str = "hf-internal-testing/llama-tokenizer",
-    p11_tkn_doc_id_column: str = "document_id",
-    p11_tkn_doc_content_column: str = "contents",
-    p11_tkn_text_lang: str = "en",
-    p11_tkn_tokenizer_args: str = "cache_dir=/tmp/hf",
-    p11_tkn_chunk_size: int = 0,
-    p11_overriding_params: str = '{"ray_worker_options": {"image": "'
+    p9_name: str = "tokenization",
+    p9_skip: bool = False,
+    p9_tkn_tokenizer: str = "hf-internal-testing/llama-tokenizer",
+    p9_tkn_doc_id_column: str = "document_id",
+    p9_tkn_doc_content_column: str = "contents",
+    p9_tkn_text_lang: str = "en",
+    p9_tkn_tokenizer_args: str = "cache_dir=/tmp/hf",
+    p9_tkn_chunk_size: int = 0,
+    p9_overriding_params: str = '{"ray_worker_options": {"image": "'
     + tokenizer_image
     + '"}, "ray_head_options": {"image": "'
     + tokenizer_image
@@ -193,7 +183,7 @@ def sample_code_ray_orchestrator(
     def _create_component(
             pipeline_name: str,
             displayed_name: str,
-            prefix="p3_",
+            prefix="",
             input_folder="",
             prev_op: dsl.BaseOp = None,
     ):
@@ -208,7 +198,7 @@ def sample_code_ray_orchestrator(
         # No cashing
         component.execution_options.caching_strategy.max_cache_staleness = "P0D"
         # image pull policy
-        # component.set_image_pull_policy("Always")
+        component.set_image_pull_policy("Always")
         if prev_op is not None:
             component.after(prev_op)
         return component
@@ -266,31 +256,13 @@ def sample_code_ray_orchestrator(
         prev_op=code_quality,
     )
 
-    # license check
-    license_select = _create_component(
-        pipeline_name=p1_orch_license_select_name,
-        displayed_name="license select",
-        prefix="p9_",
-        input_folder=malware.output,
-        prev_op=malware,
-    )
-
-    # header cleanser
-    header_cleanser = _create_component(
-        pipeline_name=p1_orch_header_cleanser_name,
-        displayed_name="header_cleanser",
-        prefix="p10_",
-        input_folder=license_select.output,
-        prev_op=license_select,
-    )
-
     # tokenization
     tokenization = _create_component(
         pipeline_name=p1_orch_tokenization_wf_name,
         displayed_name="tokenization",
-        prefix="p11_",
-        input_folder=header_cleanser.output,
-        prev_op=header_cleanser,
+        prefix="p9_",
+        input_folder=malware.output,
+        prev_op=malware,
     )
 
     # Configure the pipeline level to one week (in seconds)
