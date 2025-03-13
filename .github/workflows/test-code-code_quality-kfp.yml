@@ -28,6 +28,7 @@ on:
         branches:
             - "dev"
             - "releases/**"
+            - "staging-*"
         paths:
             - ".make.*"
             - "scripts/k8s-setup/requirements.env"
