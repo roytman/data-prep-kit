@@ -38,7 +38,7 @@ class Secret2Environment:
 
 
 DEFAULT_ENV2KEY = {
-    S3_ACCESS_SECRET: {"S3_KEY": "s3-key", "S3_SECRET": "s3-secret", "S3_ENDPOINT": "s3-endpoint"},
+    S3_ACCESS_SECRET: {"S3_ACCESS_KEY": "s3-key", "S3_SECRET_KEY": "s3-secret", "S3_ENDPOINT": "s3-endpoint"},
     HuggingFace_Secret: {"HF_READ_ACCESS_TOKEN": "hf-token"}
 }
 
