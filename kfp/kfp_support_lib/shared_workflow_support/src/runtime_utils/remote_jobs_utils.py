@@ -411,7 +411,6 @@ def _execute_remote_job(
     ns: str,
     script: str,
     params: dict[str, Any],
-    runtime_env: str,
     data_access_params: dict[str, Any],
     additional_params: dict[str, Any],
     remote_jobs: RayRemoteJobs,
@@ -429,7 +428,7 @@ def _execute_remote_job(
     :return:
     """
 
-    status, error, submission = remote_jobs.submit_job(name=name, namespace=ns, request=params, runtime_env=runtime_env, executor=script)
+    status, error, submission = remote_jobs.submit_job(name=name, namespace=ns, request=params, executor=script)
     if status != 200:
         logger.error(f"Failed to submit job - status: {status}, error: {error}")
         exit(1)
@@ -481,10 +480,6 @@ def execute_ray_jobs(
     )
     # find config parameter
     config = ParamsUtils.get_config_parameter(params=e_params)
-    environment = e_params.get("environment")
-    if environment:
-        del e_params.get["environment"]
-
     if config is None:
         exit(1)
     # get config value
