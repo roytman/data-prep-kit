@@ -212,5 +212,5 @@ class KFPUtils:
                         continue
                     logger.warning(f"{secret_name=}: there is no default env2key definition for '{secret_type}'")
                 logger.warning(f"secret_type or env2key should be defined, the secret {secret_name} is skipped")
-        EnvironmentVariables(from_ref=var_s).to_dict()
+        return EnvironmentVariables(from_ref=var_s).to_dict()
 
