@@ -46,14 +46,16 @@ def start_ray_cluster(
     worker_node = KFPUtils.load_from_json(ray_worker_options.replace("'", '"'))
     if shared_env:
         if head_options.get("environment"):
-            head_options["head_options"] = head_options.get("environment") | shared_env
+            head_options["environment"] = head_options.get("environment") | shared_env
         else:
-            head_options["head_options"] = shared_env
+            head_options["environment"] = shared_env
         if worker_node.get("environment"):
-            worker_node["head_options"] = worker_node.get("environment") | shared_env
+            worker_node["environment"] = worker_node.get("environment") | shared_env
         else:
-            worker_node["head_options"] = shared_env
-
+            worker_node["environment"] = shared_env
+    print(f"{shared_env=}")
+    print(f"{head_options=}")
+    print(f"{worker_node}")
     head_node = head_options | {
         "ray_start_params": {"metrics-export-port": "8080", "num-cpus": "0", "dashboard-host": "0.0.0.0"}
     }
