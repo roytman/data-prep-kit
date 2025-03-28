@@ -42,6 +42,7 @@ def start_ray_cluster(
     shared_secrets_dict = KFPUtils.load_from_json(shared_secrets.replace("'", '"'))
     shared_env = KFPUtils.get_environment(shared_secrets_dict)
     print(f"{shared_secrets=}")
+    print(f"{shared_secrets_dict=}")
     print(f"{shared_env=}")
     # Convert input
     head_options = KFPUtils.load_from_json(ray_head_options.replace("'", '"'))

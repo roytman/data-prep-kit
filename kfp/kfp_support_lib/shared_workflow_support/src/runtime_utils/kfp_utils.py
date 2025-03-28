@@ -189,10 +189,12 @@ class KFPUtils:
 
     @staticmethod
     def get_environment(secrets: dict[str, dict]):
+        print(f"{secrets=}")
         if secrets is None or len(secrets) == 0:
             return None
         var_s = {}
         for secret_name, value in secrets.items():
+            print(f"{secret_name=} {value=}")
             env2key = value.get("env2key")
             if env2key is not None and env2key:
                 for env_name, secret_key in env2key.items():
