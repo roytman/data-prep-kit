@@ -20,6 +20,7 @@ def start_ray_cluster(
     name: str,  # name of Ray cluster
     ray_head_options: str,  # ray head configuration
     ray_worker_options: str,  # ray worker configuration
+    shared_secrets: str, # shared environment for the head and workers
     server_url: str,  # url of api server
     additional_params: str,  # additional parameters for
 ) -> None:
@@ -38,9 +39,21 @@ def start_ray_cluster(
     if ns == "":
         print(f"Failed to get namespace")
         sys.exit(1)
+    shared_secrets_dict = KFPUtils.load_from_json(shared_secrets.replace("'", '"'))
+    shared_env = KFPUtils.get_environment(shared_secrets_dict)
     # Convert input
     head_options = KFPUtils.load_from_json(ray_head_options.replace("'", '"'))
     worker_node = KFPUtils.load_from_json(ray_worker_options.replace("'", '"'))
+    if shared_env:
+        if head_options.get("environment"):
+            head_options["head_options"] = head_options.get("environment") | shared_env
+        else:
+            head_options["head_options"] = shared_env
+        if worker_node.get("environment"):
+            worker_node["head_options"] = worker_node.get("environment") | shared_env
+        else:
+            worker_node["head_options"] = shared_env
+
     head_node = head_options | {
         "ray_start_params": {"metrics-export-port": "8080", "num-cpus": "0", "dashboard-host": "0.0.0.0"}
     }
@@ -85,6 +98,7 @@ if __name__ == "__main__":
     parser.add_argument("-wo", "--ray_worker_options", default="{}", type=str)
     parser.add_argument("-su", "--server_url", default="", type=str)
     parser.add_argument("-ap", "--additional_params", default="{}", type=str)
+    parser.add_argument("-ss", "--shared_secrets", default="{}", type=str)
 
     args = parser.parse_args()
 
@@ -97,6 +111,7 @@ if __name__ == "__main__":
         name=cluster_name,
         ray_head_options=args.ray_head_options,
         ray_worker_options=args.ray_worker_options,
+        shared_secrets=args.shared_secrets,
         server_url=args.server_url,
         additional_params=args.additional_params,
     )

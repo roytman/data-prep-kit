@@ -23,11 +23,10 @@ from workflow_support.compile_utils import (
     ComponentUtils,
 )
 
-
 # The name of the secret that holds the HugginFace token
-#HF_SECRET = "hf-secret"
+# HF_SECRET = "hf-secret"
 # The secret key that holds the HugginFace token
-#HF_SECRET_KEY = "hf-token"
+# HF_SECRET_KEY = "hf-token"
 
 task_image = "quay.io/dataprep1/data-prep-kit/lang_id-ray:latest"
 
@@ -44,20 +43,19 @@ component_spec_path = os.getenv("KFP_COMPONENT_SPEC_PATH", DEFAULT_KFP_COMPONENT
 # compute execution parameters. Here different tranforms might need different implementations. As
 # a result, instead of creating a component we are creating it in place here.
 def compute_exec_params_func(
-    worker_options: dict,
-    actor_options: dict,
-    data_s3_config: str,
-    data_max_files: int,
-    data_num_samples: int,
-    runtime_pipeline_id: str,
-    runtime_job_id: str,
-    runtime_code_location: dict,
-    secrets: dict,
-    lang_id_model_kind: str,
-    lang_id_model_url: str,
-    lang_id_content_column_name: str,
-    lang_id_output_lang_column_name: str,
-    lang_id_output_score_column_name: str,
+        worker_options: dict,
+        actor_options: dict,
+        data_s3_config: str,
+        data_max_files: int,
+        data_num_samples: int,
+        runtime_pipeline_id: str,
+        runtime_job_id: str,
+        runtime_code_location: dict,
+        lang_id_model_kind: str,
+        lang_id_model_url: str,
+        lang_id_content_column_name: str,
+        lang_id_output_lang_column_name: str,
+        lang_id_output_score_column_name: str,
 ) -> dict:
     from runtime_utils import KFPUtils
 
@@ -65,7 +63,6 @@ def compute_exec_params_func(
         "data_s3_config": data_s3_config,
         "data_max_files": data_max_files,
         "data_num_samples": data_num_samples,
-        "environment": KFPUtils.get_environment(secrets),
         "runtime_num_workers": KFPUtils.default_compute_execution_params(str(worker_options), str(actor_options)),
         "runtime_worker_options": str(actor_options),
         "runtime_pipeline_id": runtime_pipeline_id,
@@ -77,7 +74,6 @@ def compute_exec_params_func(
         "lang_id_output_lang_column_name": lang_id_output_lang_column_name,
         "lang_id_output_score_column_name": lang_id_output_score_column_name,
     }
-
 
 # KFPv1 and KFP2 uses different methods to create a component from a function. KFPv1 uses the
 # `create_component_from_func` function, but it is deprecated by KFPv2 and so has a different import path.
@@ -99,13 +95,14 @@ cleanup_ray_op = comp.load_component_from_file(component_spec_path + "deleteRayC
 # Task name is part of the pipeline name, the ray cluster name and the job name in DMF.
 TASK_NAME: str = "lang_id"
 
+
 # HuggingFace token is exported as environment variables in Ray node pods.
 # Alternatively, the secret name can be passed to the KFP component,
 # which will set it as an environment variable in the Ray nodes.
 # In this option the secret name can be set at runtime
 # but is dependent on the KFP version.
-#env_v = EnvVarFrom(source=EnvVarSource.SECRET, name=HF_SECRET, key=HF_SECRET_KEY)
-#envs = EnvironmentVariables(from_ref={"HF_READ_ACCESS_TOKEN": env_v})
+# env_v = EnvVarFrom(source=EnvVarSource.SECRET, name=HF_SECRET, key=HF_SECRET_KEY)
+# envs = EnvironmentVariables(from_ref={"HF_READ_ACCESS_TOKEN": env_v})
 
 
 @dsl.pipeline(
@@ -113,37 +110,37 @@ TASK_NAME: str = "lang_id"
     description="Pipeline for multiple lang_id",
 )
 def lang_id(
-    # Ray cluster
-    ray_name: str = "lang_id-kfp-ray",  # name of Ray cluster
-    ray_run_id_KFPv2: str = "",  # Ray cluster unique ID used only in KFP v2
-    # Add image_pull_secret and image_pull_policy to ray workers if needed
-    ray_head_options: dict = {"cpu": 1, "memory": 4, "image": task_image},
-    ray_worker_options: dict = {
-        "replicas": 2,
-        "max_replicas": 2,
-        "min_replicas": 2,
-        "cpu": 2,
-        "memory": 4,
-        "image": task_image,
-    },
-    server_url: str = "http://kuberay-apiserver-service.kuberay.svc.cluster.local:8888",
-    secrets: dict = { "s3-secret" : {"secret_type": "s3_access"}, "hf-secret": {"secret_type": "HuggingFace"}},
-    # data access
-    data_s3_config: str = "{'input_folder': 'test/lang_id/input/', 'output_folder': 'test/lang_id/output/'}",
-    data_max_files: int = -1,
-    data_num_samples: int = -1,
-    # orchestrator
-    runtime_actor_options: dict = {"num_cpus": 0.8},
-    runtime_pipeline_id: str = "pipeline_id",
-    runtime_code_location: dict = {"github": "github", "commit_hash": "12345", "path": "path"},
-    # lang_id parameters
-    lang_id_model_kind: str = "fasttext",
-    lang_id_model_url: str = "facebook/fasttext-language-identification",
-    lang_id_content_column_name: str = "text",
-    lang_id_output_lang_column_name: str = "lang",
-    lang_id_output_score_column_name: str = "score",
-    # additional parameters
-    additional_params: str = '{"wait_interval": 2, "wait_cluster_ready_tmout": 400, "wait_cluster_up_tmout": 300, "wait_job_ready_tmout": 400, "wait_print_tmout": 30, "http_retries": 5, "delete_cluster_delay_minutes": 0}',
+        # Ray cluster
+        ray_name: str = "lang_id-kfp-ray",  # name of Ray cluster
+        ray_run_id_KFPv2: str = "",  # Ray cluster unique ID used only in KFP v2
+        # Add image_pull_secret and image_pull_policy to ray workers if needed
+        ray_head_options: dict = {"cpu": 1, "memory": 4, "image": task_image},
+        ray_worker_options: dict = {
+            "replicas": 2,
+            "max_replicas": 2,
+            "min_replicas": 2,
+            "cpu": 2,
+            "memory": 4,
+            "image": task_image,
+        },
+        server_url: str = "http://kuberay-apiserver-service.kuberay.svc.cluster.local:8888",
+        shared_secrets: dict = {"s3-secret": {"secret_type": "s3_access"}, "hf-secret": {"secret_type": "HuggingFace"}},
+        # data access
+        data_s3_config: str = "{'input_folder': 'test/lang_id/input/', 'output_folder': 'test/lang_id/output/'}",
+        data_max_files: int = -1,
+        data_num_samples: int = -1,
+        # orchestrator
+        runtime_actor_options: dict = {"num_cpus": 0.8},
+        runtime_pipeline_id: str = "pipeline_id",
+        runtime_code_location: dict = {"github": "github", "commit_hash": "12345", "path": "path"},
+        # lang_id parameters
+        lang_id_model_kind: str = "fasttext",
+        lang_id_model_url: str = "facebook/fasttext-language-identification",
+        lang_id_content_column_name: str = "text",
+        lang_id_output_lang_column_name: str = "lang",
+        lang_id_output_score_column_name: str = "score",
+        # additional parameters
+        additional_params: str = '{"wait_interval": 2, "wait_cluster_ready_tmout": 400, "wait_cluster_up_tmout": 300, "wait_job_ready_tmout": 400, "wait_print_tmout": 30, "http_retries": 5, "delete_cluster_delay_minutes": 0}',
 ):
     """
     Pipeline to execute Language Identification transform
@@ -172,7 +169,7 @@ def lang_id(
         wait_job_ready_tmout - time to wait for job ready, sec
         wait_print_tmout - time between prints, sec
         http_retries - http retries for API server calls
-    :param data_s3_access_secret - s3 access secret
+    :param shared_secrets - secrets to set environment variables for the head and workers
     :param data_s3_config - s3 configuration
     :param data_max_files - max files to process
     :param data_num_samples - num samples to process
@@ -209,7 +206,6 @@ def lang_id(
         compute_exec_params = compute_exec_params_op(
             worker_options=ray_worker_options,
             actor_options=runtime_actor_options,
-            secrets=secrets,
             data_s3_config=data_s3_config,
             data_max_files=data_max_files,
             data_num_samples=data_num_samples,
@@ -229,6 +225,7 @@ def lang_id(
             run_id=run_id,
             ray_head_options=ray_head_options,
             ray_worker_options=ray_worker_options,
+            shared_secrets=shared_secrets,
             server_url=server_url,
             additional_params=additional_params,
         )
