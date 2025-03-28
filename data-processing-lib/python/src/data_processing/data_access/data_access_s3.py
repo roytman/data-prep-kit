@@ -73,7 +73,7 @@ class DataAccessS3(DataAccess):
         import os
         env_vars = os.environ
         for key, value in env_vars.items():
-            logger.inf(f"{key}: {value}")
+            logger.info(f"{key}: {value}")
         if access_key is None or secret_key is None or endpoint is None:
             valid_config = False
             logger.error(f"data access factory {prefix}: Missing Credentials {access_key} {secret_key} {endpoint} ")
