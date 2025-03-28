@@ -108,27 +108,45 @@ class ComponentUtils:
         # Add node_selector if specified
         _add_node_selector()
 
-    @staticmethod
-    def set_s3_env_vars_to_component(
-        task: dsl.PipelineTask,
-        secret: str = "",
-        env2key: Dict[str, str] = None,
-        prefix: str = None,
-    ) -> None:
-        """
-        Set S3 env variables to KFP component
-        :param task: kfp task
-        :param secret: secret name with the S3 credentials
-        :param env2key: dict with mapping each env variable to a key in the secret
-        :param prefix: prefix to add to env name
-        """
-        if env2key is None:
-            env2key = {"s3-key": "S3_KEY", "s3-secret": "S3_SECRET", "s3-endpoint": "S3_ENDPOINT"}
-
-        if prefix is not None:
-            for secret_key, _ in env2key.items():
-                env_name = env2key.pop(secret_key)
-                env_name = f"{prefix}_{env_name}"
-                env2key[secret_key] = env_name
-        # FIXME: see https://github.com/kubeflow/pipelines/issues/10914
-        kubernetes.use_secret_as_env(task=task, secret_name="s3-secret", secret_key_to_env=env2key)
+    # @staticmethod
+    # def set_s3_env_vars_to_component(
+    #     task: dsl.PipelineTask,
+    #     secret: str = "",
+    #     env2key: Dict[str, str] = None,
+    #     prefix: str = None,
+    # ) -> None:
+    #     """
+    #     Set S3 env variables to KFP component
+    #     :param task: kfp task
+    #     :param secret: secret name with the S3 credentials
+    #     :param env2key: dict with mapping each env variable to a key in the secret
+    #     :param prefix: prefix to add to env name
+    #     """
+    #     if env2key is None:
+    #         env2key = {"s3-key": "S3_KEY", "s3-secret": "S3_SECRET", "s3-endpoint": "S3_ENDPOINT"}
+    #
+    #     if prefix is not None:
+    #         for secret_key, _ in env2key.items():
+    #             env_name = env2key.pop(secret_key)
+    #             env_name = f"{prefix}_{env_name}"
+    #             env2key[secret_key] = env_name
+    #     # FIXME: see https://github.com/kubeflow/pipelines/issues/10914
+    #     kubernetes.use_secret_as_env(task=task, secret_name="s3-secret", secret_key_to_env=env2key)
+    #
+    # @staticmethod
+    # def set_secret_env_vars_to_component(
+    #         task: dsl.PipelineTask,
+    #         component: dsl.ContainerOp,
+    #         secrets: dict[str, dict[str, str]],
+    # ) -> None:
+    #     """
+    #     Set env variables to KFP component from secrets
+    #     :param task: kfp task
+    #     :param component: kfp component
+    #     :param secrets: a dict with key - secret name, and optional dict value with mapping each env variable to a key in the secret
+    #     """
+    #     for secret_name, env2key in secrets.values():
+    #         if env2key is not None and env2key:
+    #             kubernetes.use_secret_as_env(task=task, secret_name=secret_name, secret_key_to_env=env2key)
+    #         else:
+    #             kubernetes.use_secret_as_env(task=task, secret_name=secret_name)

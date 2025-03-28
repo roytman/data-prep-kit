@@ -131,9 +131,9 @@ def noop(
 },
 
     server_url: str = "http://kuberay-apiserver-service.kuberay.svc.cluster.local:8888",
+    secrets: dict = {"s3-secret": None},
     # data access
     data_s3_config: str = "{'input_folder': 'test/noop/input/', 'output_folder': 'test/noop/output/'}",
-    data_s3_access_secret: str = "s3-secret",
     data_max_files: int = -1,
     data_num_samples: int = -1,
     data_checkpointing: bool = False,
@@ -173,7 +173,7 @@ def noop(
         wait_job_ready_tmout - time to wait for job ready, sec
         wait_print_tmout - time between prints, sec
         http_retries - http retries for API server calls
-    :param data_s3_access_secret - s3 access secret
+        :param secrets - secretes used by Ray, e.g. s3 access secret
     :param data_s3_config - s3 configuration
     :param data_max_files - max files to process
     :param data_num_samples - num samples to process
@@ -237,7 +237,8 @@ def noop(
             server_url=server_url,
         )
         ComponentUtils.add_settings_to_component(execute_job, ONE_WEEK_SEC)
-        ComponentUtils.set_s3_env_vars_to_component(execute_job, data_s3_access_secret)
+        # ComponentUtils.set_s3_env_vars_to_component(execute_job, data_s3_access_secret)
+        ComponentUtils.set_secret_env_vars_to_component(secrets)
         execute_job.after(ray_cluster)
 
 if __name__ == "__main__":

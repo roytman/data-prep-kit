@@ -15,11 +15,7 @@ import os
 import kfp.compiler as compiler
 import kfp.components as comp
 import kfp.dsl as dsl
-from python_apiserver_client.params import (
-    EnvironmentVariables,
-    EnvVarFrom,
-    EnvVarSource,
-)
+
 from workflow_support.compile_utils import (
     DEFAULT_KFP_COMPONENT_SPEC_PATH,
     ONE_HOUR_SEC,
@@ -29,9 +25,9 @@ from workflow_support.compile_utils import (
 
 
 # The name of the secret that holds the HugginFace token
-HF_SECRET = "hf-secret"
+#HF_SECRET = "hf-secret"
 # The secret key that holds the HugginFace token
-HF_SECRET_KEY = "hf-token"
+#HF_SECRET_KEY = "hf-token"
 
 task_image = "quay.io/dataprep1/data-prep-kit/lang_id-ray:latest"
 
@@ -56,6 +52,7 @@ def compute_exec_params_func(
     runtime_pipeline_id: str,
     runtime_job_id: str,
     runtime_code_location: dict,
+    secrets: dict,
     lang_id_model_kind: str,
     lang_id_model_url: str,
     lang_id_content_column_name: str,
@@ -68,6 +65,7 @@ def compute_exec_params_func(
         "data_s3_config": data_s3_config,
         "data_max_files": data_max_files,
         "data_num_samples": data_num_samples,
+        "environment": KFPUtils.get_environment(secrets),
         "runtime_num_workers": KFPUtils.default_compute_execution_params(str(worker_options), str(actor_options)),
         "runtime_worker_options": str(actor_options),
         "runtime_pipeline_id": runtime_pipeline_id,
@@ -106,8 +104,8 @@ TASK_NAME: str = "lang_id"
 # which will set it as an environment variable in the Ray nodes.
 # In this option the secret name can be set at runtime
 # but is dependent on the KFP version.
-env_v = EnvVarFrom(source=EnvVarSource.SECRET, name=HF_SECRET, key=HF_SECRET_KEY)
-envs = EnvironmentVariables(from_ref={"HF_READ_ACCESS_TOKEN": env_v})
+#env_v = EnvVarFrom(source=EnvVarSource.SECRET, name=HF_SECRET, key=HF_SECRET_KEY)
+#envs = EnvironmentVariables(from_ref={"HF_READ_ACCESS_TOKEN": env_v})
 
 
 @dsl.pipeline(
@@ -119,7 +117,7 @@ def lang_id(
     ray_name: str = "lang_id-kfp-ray",  # name of Ray cluster
     ray_run_id_KFPv2: str = "",  # Ray cluster unique ID used only in KFP v2
     # Add image_pull_secret and image_pull_policy to ray workers if needed
-    ray_head_options: dict = {"cpu": 1, "memory": 4, "image": task_image, "environment": envs.to_dict()},
+    ray_head_options: dict = {"cpu": 1, "memory": 4, "image": task_image},
     ray_worker_options: dict = {
         "replicas": 2,
         "max_replicas": 2,
@@ -127,12 +125,11 @@ def lang_id(
         "cpu": 2,
         "memory": 4,
         "image": task_image,
-        "environment": envs.to_dict(),
     },
     server_url: str = "http://kuberay-apiserver-service.kuberay.svc.cluster.local:8888",
+    secrets: dict = { "s3-secret" : {"secret_type": "s3_access"}, "hf-secret": {"secret_type": "HuggingFace"}},
     # data access
     data_s3_config: str = "{'input_folder': 'test/lang_id/input/', 'output_folder': 'test/lang_id/output/'}",
-    data_s3_access_secret: str = "s3-secret",
     data_max_files: int = -1,
     data_num_samples: int = -1,
     # orchestrator
@@ -212,6 +209,7 @@ def lang_id(
         compute_exec_params = compute_exec_params_op(
             worker_options=ray_worker_options,
             actor_options=runtime_actor_options,
+            secrets=secrets,
             data_s3_config=data_s3_config,
             data_max_files=data_max_files,
             data_num_samples=data_num_samples,
@@ -247,7 +245,6 @@ def lang_id(
             server_url=server_url,
         )
         ComponentUtils.add_settings_to_component(execute_job, ONE_WEEK_SEC)
-        ComponentUtils.set_s3_env_vars_to_component(execute_job, data_s3_access_secret)
         execute_job.after(ray_cluster)
 
 

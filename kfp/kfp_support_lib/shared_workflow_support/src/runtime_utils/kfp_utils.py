@@ -16,10 +16,31 @@ import re
 import sys
 from typing import Any
 
+from python_apiserver_client.params import (
+    EnvironmentVariables,
+    EnvVarFrom,
+    EnvVarSource,
+)
 from data_processing.utils import get_logger
 
 
 logger = get_logger(__name__)
+
+
+S3_ACCESS_SECRET: str = "s3_access"
+HuggingFace_Secret: str = "HuggingFace"
+
+class Secret2Environment:
+    def __init__(self, secret_name: str, secret_type: str, enc2key: dict[str, str]):
+        self.secret_name = secret_name
+        self.secret_type = secret_type
+        self.enc2key = enc2key
+
+
+DEFAULT_ENV2KEY = {
+    S3_ACCESS_SECRET: {"S3_KEY": "s3-key", "S3_SECRET": "s3-secret", "S3_ENDPOINT": "s3-endpoint"},
+    HuggingFace_Secret: {"HF_READ_ACCESS_TOKEN": "hf-token"}
+}
 
 
 class KFPUtils:
@@ -27,23 +48,23 @@ class KFPUtils:
     Helper utilities for KFP implementations
     """
 
-    @staticmethod
-    def credentials(
-        access_key: str = "S3_KEY", secret_key: str = "S3_SECRET", endpoint: str = "S3_ENDPOINT"
-    ) -> tuple[str, str, str]:
-        """
-        Get credentials from the environment
-        :param access_key: environment variable for access key
-        :param secret_key: environment variable for secret key
-        :param endpoint: environment variable for S3 endpoint
-        :return:
-        """
-        s3_key = os.getenv(access_key, None)
-        s3_secret = os.getenv(secret_key, None)
-        s3_endpoint = os.getenv(endpoint, None)
-        if s3_key is None or s3_secret is None or s3_endpoint is None:
-            logger.warning("Failed to load s3 credentials")
-        return s3_key, s3_secret, s3_endpoint
+    # @staticmethod
+    # def credentials(
+    #     access_key: str = "S3_KEY", secret_key: str = "S3_SECRET", endpoint: str = "S3_ENDPOINT"
+    # ) -> tuple[str, str, str]:
+    #     """
+    #     Get credentials from the environment
+    #     :param access_key: environment variable for access key
+    #     :param secret_key: environment variable for secret key
+    #     :param endpoint: environment variable for S3 endpoint
+    #     :return:
+    #     """
+    #     s3_key = os.getenv(access_key, None)
+    #     s3_secret = os.getenv(secret_key, None)
+    #     s3_endpoint = os.getenv(endpoint, None)
+    #     if s3_key is None or s3_secret is None or s3_endpoint is None:
+    #         logger.warning("Failed to load s3 credentials")
+    #     return s3_key, s3_secret, s3_endpoint
 
     @staticmethod
     def get_namespace() -> str:
@@ -165,3 +186,28 @@ class KFPUtils:
             sys.exit(1)
 
         return str(n_actors)
+
+    @staticmethod
+    def get_environment(secrets: dict[str, dict]):
+        if secrets is None or len(secrets) == 0:
+            return None
+        var_s = {}
+        for secret_name, value in secrets.items():
+            env2key = value.get("env2key")
+            if env2key is not None and env2key:
+                for env_name, secret_key in env2key.items():
+                    env_v = EnvVarFrom(source=EnvVarSource.SECRET, name=secret_name, key=secret_key)
+                    var_s[env_name] = env_v
+            else:
+                secret_type= value.get("secret_type")
+                if secret_type:
+                    # try to get defaults
+                    env2key = DEFAULT_ENV2KEY.get(secret_type)
+                    if env2key:
+                        for env_name, secret_key in env2key.items():
+                            env_v = EnvVarFrom(source=EnvVarSource.SECRET, name=secret_name, key=secret_key)
+                            var_s[env_name] = env_v
+                        continue
+                    logger.warning(f"{secret_name=}: there is no default env2key definition for '{secret_type}'")
+                logger.warning(f"secret_type or env2key should be defined, the secret {secret_name} is skipped")
+        return EnvironmentVariables(from_ref=var_s)

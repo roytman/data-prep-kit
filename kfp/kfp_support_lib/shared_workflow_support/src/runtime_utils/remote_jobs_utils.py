@@ -411,6 +411,7 @@ def _execute_remote_job(
     ns: str,
     script: str,
     params: dict[str, Any],
+    runtime_env: str,
     data_access_params: dict[str, Any],
     additional_params: dict[str, Any],
     remote_jobs: RayRemoteJobs,
@@ -428,7 +429,7 @@ def _execute_remote_job(
     :return:
     """
 
-    status, error, submission = remote_jobs.submit_job(name=name, namespace=ns, request=params, executor=script)
+    status, error, submission = remote_jobs.submit_job(name=name, namespace=ns, request=params, runtime_env=runtime_env, executor=script)
     if status != 200:
         logger.error(f"Failed to submit job - status: {status}, error: {error}")
         exit(1)
@@ -480,18 +481,20 @@ def execute_ray_jobs(
     )
     # find config parameter
     config = ParamsUtils.get_config_parameter(params=e_params)
+    environment = e_params.get("environment")
+    if environment:
+        del e_params.get["environment"]
+
     if config is None:
         exit(1)
     # get config value
     config_value = KFPUtils.load_from_json(e_params[config].replace("'", '"'))
-    #s3_creds = KFPUtils.load_from_json(e_params["data_s3_cred"].replace("'", '"'))
     if type(config_value) is not list:
         # single request
         return _execute_remote_job(
             name=name,
             ns=ns,
             script=exec_script_name,
-#            data_access_params={f"{cli_prefix}s3_config": config_value, f"{cli_prefix}s3_cred": s3_creds},
             data_access_params={f"{cli_prefix}s3_config": config_value},
             params=e_params,
             additional_params=additional_params,
@@ -510,7 +513,6 @@ def execute_ray_jobs(
                 name=name,
                 ns=ns,
                 script=exec_script_name,
-#                data_access_params={f"{cli_prefix}s3_config": conf, f"{cli_prefix}s3_cred": s3_creds},
                 data_access_params={f"{cli_prefix}s3_config": conf},
                 params=launch_params,
                 additional_params=additional_params,

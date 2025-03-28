@@ -16,14 +16,6 @@ import os
 import kfp.dsl as dsl
 from data_processing.utils import get_logger
 from kubernetes import client as k8s_client
-from kubernetes.client import (
-    V1Affinity,
-    V1NodeAffinity,
-    V1NodeSelector,
-    V1NodeSelectorRequirement,
-    V1NodeSelectorTerm,
-    V1Toleration,
-)
 
 
 logger = get_logger(__name__)
@@ -71,7 +63,7 @@ class ComponentUtils:
                     tolerations = json.loads(tolerations)
                     for toleration in tolerations:
                         component.add_toleration(
-                            V1Toleration(
+                            k8s_client.V1Toleration(
                                 key=toleration["key"],
                                 operator=toleration["operator"],
                                 value=toleration["value"],
@@ -105,31 +97,57 @@ class ComponentUtils:
         # Add affinity
         _add_node_selector()
 
-    @staticmethod
-    def set_s3_env_vars_to_component(
-        component: dsl.ContainerOp,
-        secret: str,
-        env2key: dict[str, str] = {"S3_KEY": "s3-key", "S3_SECRET": "s3-secret", "S3_ENDPOINT": "s3-endpoint"},
-        prefix: str = None,
-    ) -> None:
-        """
-        Set S3 env variables to KFP component
-        :param component: kfp component
-        :param secret: secret name with the S3 credentials
-        :param env2key: dict with mapping each env variable to a key in the secret
-        :param prefix: prefix to add to env name
-        """
-        for env_name, secret_key in env2key.items():
-            if prefix is not None:
-                env_name = f"{prefix}_{env_name}"
-            component = component.add_env_variable(
-                k8s_client.V1EnvVar(
-                    name=env_name,
-                    value_from=k8s_client.V1EnvVarSource(
-                        secret_key_ref=k8s_client.V1SecretKeySelector(name=secret, key=secret_key)
-                    ),
-                )
-            )
+    # # TODO Remove me
+    # @staticmethod
+    # def set_s3_env_vars_to_component(
+    #     component: dsl.ContainerOp,
+    #     secret: str,
+    #     env2key: dict[str, str] = {"S3_KEY": "s3-key", "S3_SECRET": "s3-secret", "S3_ENDPOINT": "s3-endpoint"},
+    #     prefix: str = None,
+    # ) -> None:
+    #     """
+    #     Set S3 env variables to KFP component
+    #     :param component: kfp component
+    #     :param secret: secret name with the S3 credentials
+    #     :param env2key: dict with mapping each env variable to a key in the secret
+    #     :param prefix: prefix to add to env name
+    #     """
+    #     for env_name, secret_key in env2key.items():
+    #         if prefix is not None:
+    #             env_name = f"{prefix}_{env_name}"
+    #         component = component.add_env_variable(
+    #             k8s_client.V1EnvVar(
+    #                 name=env_name,
+    #                 value_from=k8s_client.V1EnvVarSource(
+    #                     secret_key_ref=k8s_client.V1SecretKeySelector(name=secret, key=secret_key)
+    #                 ),
+    #             )
+    #         )
+
+    # @staticmethod
+    # def set_secret_env_vars_to_component(
+    #         component: dsl.ContainerOp,
+    #         secrets: dict[str, dict[str, str]],
+    # ) -> None:
+    #     """
+    #     Set env variables to KFP component from secrets
+    #     :param component: kfp component
+    #     :param secrets: a dict with key - secret name, and optional dict value with mapping each env variable to a key in the secret
+    #     """
+    #     for secret_name, env2key in secrets.values():
+    #         if env2key is not None and env2key:
+    #             for env_name, secret_key in env2key.items():
+    #                 component = component.add_env_variable(
+    #                     k8s_client.V1EnvVar(
+    #                         name=env_name,
+    #                         value_from=k8s_client.V1EnvVarSource(
+    #                             secret_key_ref=k8s_client.V1SecretKeySelector(name=secret_name, key=secret_key)
+    #                         ),
+    #                     )
+    #                 )
+    #         else:
+    #             component = component.add_env_variable(k8s_client.V1SecretEnvSource(name=secret_name)
+
 
     @staticmethod
     def add_cm_volume_to_com_function(component: dsl.ContainerOp, cmName: str, mountPoint: str, optional=False):
