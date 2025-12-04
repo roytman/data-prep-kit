@@ -88,8 +88,8 @@ class TransformExecutionConfiguration(CLIArgumentProvider):
 
 
         # print parameters
-        logger.info(f"pipeline id {self.pipeline_id}")
+        logger.debug(f"pipeline id {self.pipeline_id}")
         if self.print_params:
             logger.info(f"job details {self.job_details}")
-        logger.info(f"code location {self.code_location}")
+        logger.debug(f"code location {self.code_location}")
         return True
